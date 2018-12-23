@@ -11,7 +11,7 @@ let uname () =
     let () = close_in ic in
     uname;;
 
-let get_os = 
+let get_os =
     match Sys.os_type with
     | "Win32" -> Windows
     | _ -> match uname () with
@@ -19,7 +19,11 @@ let get_os =
         | "Linux" -> Linux
         | _ -> Unknown
 
-let c_flags = ["-I";  "./../../../include"; "-I"; "./../../../src"]
+let root = Sys.getenv "cur__root"
+let c_flags = [
+  "-I"; Filename.concat root "include";
+  "-I"; Filename.concat root "src";
+]
 
 let ccopt s = ["-ccopt"; s]
 let cclib s = ["-cclib"; s]

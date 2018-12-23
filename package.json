@@ -5,15 +5,34 @@
   "license": "MIT",
   "esy": {
     "build": [
-        ["make", "#{os == 'windows' ? 'noop' : 'build-glfw'}", "ROOTDIR=#{self.root}"],
-        ["dune", "build", "--root", "."],
-        ["dune", "build", "--root", ".", "./bin_js/test_glfw.bc.js"],
-        ["make", "install", "ROOTDIR=#{self.root}", "LIBDIR=#{self.lib}/reglfw"]
+      [
+        "make",
+        "#{os == 'windows' ? 'noop' : 'build-glfw'}",
+        "ROOTDIR=#{self.root}"
+      ],
+      [
+        "dune",
+        "build",
+        "--root",
+        "."
+      ],
+      [
+        "dune",
+        "build",
+        "--root",
+        ".",
+        "./bin_js/test_glfw.bc.js"
+      ],
+      [
+        "make",
+        "install",
+        "ROOTDIR=#{self.root}",
+        "LIBDIR=#{self.lib}/reglfw"
+      ]
     ],
     "install": [
-        "esy-installer"
-    ],
-    "buildsInSource":"_build"
+      "esy-installer"
+    ]
   },
   "peerDependencies": {
     "ocaml": "~4.6.0"

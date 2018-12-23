@@ -13,29 +13,29 @@ let glfwTerminate: unit => unit;
 let glfwSwapBuffers: Window.t => unit;
 let glfwSetWindowPos: (Window.t, int, int) => unit;
 let glfwSetWindowSize: (Window.t, int, int) => unit;
-let glfwGetFramebufferSize: (Window.t) => Window.frameBufferSize;
-let glfwMaximizeWindow: (Window.t) => unit;
+let glfwGetFramebufferSize: Window.t => Window.frameBufferSize;
+let glfwMaximizeWindow: Window.t => unit;
 let glfwSetWindowTitle: (Window.t, string) => unit;
-let glfwShowWindow: (Window.t) => unit;
-let glfwHideWindow: (Window.t) => unit;
-let glfwDestroyWindow: (Window.t) => unit;
+let glfwShowWindow: Window.t => unit;
+let glfwHideWindow: Window.t => unit;
+let glfwDestroyWindow: Window.t => unit;
 let glfwSwapInterval: int => unit;
 let glfwGetTime: unit => float;
 let glfwSetTime: float => unit;
 
-module Modifier {
-    type t;
+module Modifier: {
+  type t;
 
-    let of_int: int => t;
+  let of_int: int => t;
 
-    let isShiftPressed: t => bool;
-    let isControlPressed: t => bool;
-    let isAltPressed: t => bool;
-    let isSuperPressed: t => bool;
-}
+  let isShiftPressed: t => bool;
+  let isControlPressed: t => bool;
+  let isAltPressed: t => bool;
+  let isSuperPressed: t => bool;
+};
 
-module MouseButton {
-    type t =
+module MouseButton: {
+  type t =
     | GLFW_MOUSE_LEFT
     | GLFW_MOUSE_RIGHT
     | GLFW_MOUSE_MIDDLE
@@ -43,48 +43,48 @@ module MouseButton {
     | GLFW_MOUSE_BUTTON_5
     | GLFW_MOUSE_BUTTON_6
     | GLFW_MOUSE_BUTTON_7
-    | GLFW_MOUSE_BUTTON_8
+    | GLFW_MOUSE_BUTTON_8;
 
-    let show: t => string;
+  let show: t => string;
 };
 
-module Monitor {
-    type t;
+module Monitor: {
+  type t;
 
-    type position = {
-        x: int,
-        y: int,
-    };
-}
+  type position = {
+    x: int,
+    y: int,
+  };
+};
 
-module VideoMode {
-    type t = {
-        width: int,
-        height: int,
-    };
-}
+module VideoMode: {
+  type t = {
+    width: int,
+    height: int,
+  };
+};
 
 let glfwGetPrimaryMonitor: unit => Monitor.t;
 let glfwGetVideoMode: Monitor.t => VideoMode.t;
 let glfwGetMonitorPos: Monitor.t => Monitor.position;
 
 type windowHint =
-| GLFW_RESIZABLE
-| GLFW_VISIBLE
-| GLFW_DECORATED
-| GLFW_FOCUSED
-| GLFW_AUTO_ICONIFY
-| GLFW_FLOATING
-| GLFW_MAXIMIZED;
+  | GLFW_RESIZABLE
+  | GLFW_VISIBLE
+  | GLFW_DECORATED
+  | GLFW_FOCUSED
+  | GLFW_AUTO_ICONIFY
+  | GLFW_FLOATING
+  | GLFW_MAXIMIZED;
 
-module ButtonState {
-    type t =
+module ButtonState: {
+  type t =
     | GLFW_PRESS
     | GLFW_RELEASE
     | GLFW_REPEAT;
 
-    let show: t => string;
-}
+  let show: t => string;
+};
 
 let glfwDefaultWindowHints: unit => unit;
 let glfwWindowHint: (windowHint, bool) => unit;
@@ -95,32 +95,33 @@ let glfwSetCursorPosCallback: (Window.t, glfwCursorPosCallback) => unit;
 type glfwCharCallback = (Window.t, int) => unit;
 let glfwSetCharCallback: (Window.t, glfwCharCallback) => unit;
 
-type glfwKeyCallback = (Window.t, Key.t, int, ButtonState.t, Modifier.t) => unit;
+type glfwKeyCallback =
+  (Window.t, Key.t, int, ButtonState.t, Modifier.t) => unit;
 let glfwSetKeyCallback: (Window.t, glfwKeyCallback) => unit;
 
 type glfwScrollCallback = (Window.t, float, float) => unit;
 let glfwSetScrollCallback: (Window.t, glfwScrollCallback) => unit;
 
-type glfwMouseButtonCallback = (Window.t, MouseButton.t, ButtonState.t, Modifier.t) => unit;
+type glfwMouseButtonCallback =
+  (Window.t, MouseButton.t, ButtonState.t, Modifier.t) => unit;
 let glfwSetMouseButtonCallback: (Window.t, glfwMouseButtonCallback) => unit;
 
 let glfwSetFramebufferSizeCallback:
   (Window.t, glfwFramebufferSizeCallback) => unit;
 
-let glfwSetWindowSizeCallback:
-  (Window.t, glfwWindowSizeCallback) => unit;
+let glfwSetWindowSizeCallback: (Window.t, glfwWindowSizeCallback) => unit;
 
 type glfwCursorPos = {
-    mouseX: float,
-    mouseY: float
+  mouseX: float,
+  mouseY: float,
 };
 let glfwGetCursorPos: Window.t => glfwCursorPos;
 
 let printFrameBufferSize: Window.t => unit;
 
-type glfwRenderLoopCallback = (float) => bool;
+type glfwRenderLoopCallback = float => bool;
 
-let glfwRenderLoop: (glfwRenderLoopCallback) => unit;
+let glfwRenderLoop: glfwRenderLoopCallback => unit;
 
 /* GL */
 
@@ -162,8 +163,8 @@ let glBlendFunc: (blendFunc, blendFunc) => unit;
 type program;
 
 type shaderLinkResult =
-| LinkSuccess
-| LinkFailure(string);
+  | LinkSuccess
+  | LinkFailure(string);
 
 let glCreateProgram: unit => program;
 let glAttachShader: (program, shader) => unit;
@@ -198,8 +199,13 @@ type pixelAlignmentParameter =
 
 let glPixelStorei: (pixelAlignmentParameter, int) => unit;
 
-type textureType =
-  | GL_TEXTURE_2D;
+type target =
+  | GL_TEXTURE_1D
+  | GL_TEXTURE_2D
+  | GL_TEXTURE_3D
+  | GL_TEXTURE_CUBE_MAP
+  | GL_TEXTURE_1D_ARRAY
+  | GL_TEXTURE_2D_ARRAY;
 
 type textureParameter =
   | GL_TEXTURE_WRAP_S
@@ -212,7 +218,10 @@ type textureParameterValue =
   | GL_LINEAR
   | GL_CLAMP_TO_EDGE;
 
-type texturePixelDataFormat =
+type format =
+  | GL_ALPHA
+  | GL_LUMINANCE
+  | GL_LUMINANCE_ALPHA
   | GL_RGB
   | GL_RGBA;
 
@@ -223,18 +232,36 @@ type glType =
 
 type texture;
 let glCreateTexture: unit => texture;
-let glBindTexture: (textureType, texture) => unit;
-let glTexParameteri:
-  (textureType, textureParameter, textureParameterValue) => unit;
+let glBindTexture: (target, texture) => unit;
+let glTexParameteri: (target, textureParameter, textureParameterValue) => unit;
 let glTexImage2D:
-  (textureType, Image.t) => unit;
-let glGenerateMipmap: textureType => unit;
+  (
+    target,
+    int,
+    format,
+    format,
+    glType,
+    Bigarray.Array2.t(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+  ) =>
+  unit;
+let glTexImage3D:
+  (
+    target,
+    int,
+    format,
+    format,
+    glType,
+    Bigarray.Array3.t(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+  ) =>
+  unit;
+let glGenerateMipmap: target => unit;
 
 type bufferType =
   | GL_ARRAY_BUFFER
   | GL_ELEMENT_ARRAY_BUFFER;
 
-let glVertexAttribPointer: (attribLocation, int, glType, bool) => unit;
+let glVertexAttribPointer:
+  (attribLocation, int, glType, bool, int, int) => unit;
 let glEnableVertexAttribArray: attribLocation => unit;
 
 type buffer;
@@ -246,12 +273,7 @@ type drawType =
   | GL_STATIC_DRAW;
 
 let glBufferData:
-  (
-    bufferType,
-    Bigarray.Array1.t('a, 'b, Bigarray.c_layout),
-    drawType
-  ) =>
-  unit;
+  (bufferType, Bigarray.Array1.t('a, 'b, Bigarray.c_layout), drawType) => unit;
 
 type drawMode =
   | GL_TRIANGLES
@@ -259,3 +281,7 @@ type drawMode =
 
 let glDrawArrays: (drawMode, int, int) => unit;
 let glDrawElements: (drawMode, int, glType, int) => unit;
+
+/* Reglfw */
+
+let reglfwTexImage2D: (target, Image.t) => unit;

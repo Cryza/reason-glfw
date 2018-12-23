@@ -27,7 +27,8 @@ external glfwGetFramebufferSize: Window.t => Window.frameBufferSize =
 external glfwMaximizeWindow: Window.t => unit = "caml_glfwMaximizeWindow";
 external glfwSetWindowTitle: (Window.t, string) => unit =
   "caml_glfwSetWindowTitle";
-[@noalloc] external glfwDestroyWindow: Window.t => unit = "caml_glfwDestroyWindow"; 
+[@noalloc]
+external glfwDestroyWindow: Window.t => unit = "caml_glfwDestroyWindow";
 [@noalloc] external glfwSwapInterval: int => unit = "caml_glfwSwapInterval";
 
 [@noalloc]
@@ -56,8 +57,8 @@ module Modifier = {
   let isSuperPressed = (m: t) => m land _mod_super == _mod_super;
 };
 
-module MouseButton {
-    type t =
+module MouseButton = {
+  type t =
     | GLFW_MOUSE_LEFT
     | GLFW_MOUSE_RIGHT
     | GLFW_MOUSE_MIDDLE
@@ -65,9 +66,10 @@ module MouseButton {
     | GLFW_MOUSE_BUTTON_5
     | GLFW_MOUSE_BUTTON_6
     | GLFW_MOUSE_BUTTON_7
-    | GLFW_MOUSE_BUTTON_8
+    | GLFW_MOUSE_BUTTON_8;
 
-    let show = (t) => switch(t) {
+  let show = t =>
+    switch (t) {
     | GLFW_MOUSE_LEFT => "Left"
     | GLFW_MOUSE_RIGHT => "Right"
     | GLFW_MOUSE_MIDDLE => "Middle"
@@ -175,28 +177,32 @@ let glfwSetKeyCallback = (win, callback) =>
   );
 
 type glfwCursorPosCallback = (Window.t, float, float) => unit;
-external glfwSetCursorPosCallback: (Window.t, glfwCursorPosCallback) => unit = "caml_glfwSetCursorPosCallback";
+external glfwSetCursorPosCallback: (Window.t, glfwCursorPosCallback) => unit =
+  "caml_glfwSetCursorPosCallback";
 
 /* Internal implementation of glfwMouseButtonCallback, since we need to cast some integers to types */
-type _glfwMouseButtonCallback = (Window.t, MouseButton.t, ButtonState.t, int) => unit;
-external _glfwSetMouseButtonCallback: (Window.t, _glfwMouseButtonCallback) => unit = "caml_glfwSetMouseButtonCallback";
+type _glfwMouseButtonCallback =
+  (Window.t, MouseButton.t, ButtonState.t, int) => unit;
+external _glfwSetMouseButtonCallback:
+  (Window.t, _glfwMouseButtonCallback) => unit =
+  "caml_glfwSetMouseButtonCallback";
 
-type glfwMouseButtonCallback = (Window.t, MouseButton.t, ButtonState.t, Modifier.t) => unit;
-let glfwSetMouseButtonCallback = (win, callback) => {
-    _glfwSetMouseButtonCallback(win, (w, m, b, modifier) => {
-        callback(w, m, b, Modifier.of_int(modifier));
-    });
-};
+type glfwMouseButtonCallback =
+  (Window.t, MouseButton.t, ButtonState.t, Modifier.t) => unit;
+let glfwSetMouseButtonCallback = (win, callback) =>
+  _glfwSetMouseButtonCallback(win, (w, m, b, modifier) =>
+    callback(w, m, b, Modifier.of_int(modifier))
+  );
 
 type glfwScrollCallback = (Window.t, float, float) => unit;
-external glfwSetScrollCallback: (Window.t, glfwScrollCallback) => unit = "caml_glfwSetScrollCallback";
+external glfwSetScrollCallback: (Window.t, glfwScrollCallback) => unit =
+  "caml_glfwSetScrollCallback";
 
 external glfwSetFramebufferSizeCallback:
   (Window.t, glfwFramebufferSizeCallback) => unit =
   "caml_glfwSetFramebufferSizeCallback";
 
-external glfwSetWindowSizeCallback:
-  (Window.t, glfwWindowSizeCallback) => unit =
+external glfwSetWindowSizeCallback: (Window.t, glfwWindowSizeCallback) => unit =
   "caml_glfwSetWindowSizeCallback";
 
 type glfwCursorPos = {
@@ -229,8 +235,9 @@ external glClearDepth: float => unit = "caml_glClearDepth";
 external glCreateShader: shaderType => shader = "caml_glCreateShader";
 external glShaderSource: (shader, string) => unit = "caml_glShaderSource";
 
-[@noalloc] external glViewport: (int, int, int, int) => unit = "caml_glViewport";
-[@noalloc] external glScissor:  (int, int, int, int) => unit = "caml_glScissor"; 
+[@noalloc]
+external glViewport: (int, int, int, int) => unit = "caml_glViewport";
+[@noalloc] external glScissor: (int, int, int, int) => unit = "caml_glScissor";
 
 [@noalloc] external glEnable: enableOptions => unit = "caml_glEnable";
 [@noalloc] external glDisable: enableOptions => unit = "caml_glDisable";
@@ -304,8 +311,13 @@ external glPixelStorei: (pixelAlignmentParameter, int) => unit =
   "caml_glPixelStorei";
 
 type texture;
-type textureType =
-  | GL_TEXTURE_2D;
+type target =
+  | GL_TEXTURE_1D
+  | GL_TEXTURE_2D
+  | GL_TEXTURE_3D
+  | GL_TEXTURE_CUBE_MAP
+  | GL_TEXTURE_1D_ARRAY
+  | GL_TEXTURE_2D_ARRAY;
 
 type textureParameter =
   | GL_TEXTURE_WRAP_S
@@ -318,7 +330,10 @@ type textureParameterValue =
   | GL_LINEAR
   | GL_CLAMP_TO_EDGE;
 
-type texturePixelDataFormat =
+type format =
+  | GL_ALPHA
+  | GL_LUMINANCE
+  | GL_LUMINANCE_ALPHA
   | GL_RGB
   | GL_RGBA;
 
@@ -328,12 +343,34 @@ type glType =
   | GL_UNSIGNED_SHORT;
 
 external glCreateTexture: unit => texture = "caml_glCreateTexture";
-external glBindTexture: (textureType, texture) => unit = "caml_glBindTexture";
+external glBindTexture: (target, texture) => unit = "caml_glBindTexture";
 external glTexParameteri:
-  (textureType, textureParameter, textureParameterValue) => unit =
+  (target, textureParameter, textureParameterValue) => unit =
   "caml_glTexParameteri";
-external glTexImage2D: (textureType, Image.t) => unit = "caml_glTexImage2D";
-external glGenerateMipmap: textureType => unit = "caml_glGenerateMipmap";
+external glTexImage2D:
+  (
+    target,
+    int,
+    format,
+    format,
+    glType,
+    Bigarray.Array2.t(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+  ) =>
+  unit =
+  "caml_glTexImage2D_extension" "caml_glTexImage2D";
+
+external glTexImage3D:
+  (
+    target,
+    int,
+    format,
+    format,
+    glType,
+    Bigarray.Array3.t(int, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+  ) =>
+  unit =
+  "caml_glTexImage3D_extension" "caml_glTexImage3D";
+external glGenerateMipmap: target => unit = "caml_glGenerateMipmap";
 
 type bufferType =
   | GL_ARRAY_BUFFER
@@ -351,8 +388,9 @@ external glBufferData:
   (bufferType, Bigarray.Array1.t('a, 'b, Bigarray.c_layout), drawType) => unit =
   "caml_glBufferData";
 
-external glVertexAttribPointer: (attribLocation, int, glType, bool) => unit =
-  "caml_glVertexAttribPointer";
+external glVertexAttribPointer:
+  (attribLocation, int, glType, bool, int, int) => unit =
+  "caml_glVertexAttribPointer_extension" "caml_glVertexAttribPointer";
 external glEnableVertexAttribArray: attribLocation => unit =
   "caml_glEnableVertexAttribArray";
 
@@ -365,3 +403,7 @@ external glDrawElements: (drawMode, int, glType, int) => unit =
   "caml_glDrawElements";
 
 external printFrameBufferSize: Window.t => unit = "caml_printFrameBufferSize";
+
+/* Reglfw */
+
+external reglfwTexImage2D: (target, Image.t) => unit = "caml_reglfwTexImage2D";

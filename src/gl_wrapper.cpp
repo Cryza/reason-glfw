@@ -38,7 +38,7 @@ extern "C" {
                 return 0;
         }
     }
-    
+
     GLenum variantToEnableOption(value vVal) {
         switch (Int_val(vVal)) {
             case 0:
@@ -91,10 +91,20 @@ extern "C" {
         }
     }
 
-    GLenum variantToTextureType(value vVal) {
+    GLenum variantToTarget(value vVal) {
         switch (Int_val(vVal)) {
             case 0:
+                return GL_TEXTURE_1D;
+            case 1:
                 return GL_TEXTURE_2D;
+            case 2:
+                return GL_TEXTURE_3D;
+            case 3:
+                return GL_TEXTURE_CUBE_MAP;
+            case 4:
+                return GL_TEXTURE_1D_ARRAY;
+            case 5:
+                return GL_TEXTURE_2D_ARRAY;
             default:
                 warn("Unexpected texture type!");
                 return 0;
@@ -141,6 +151,24 @@ extern "C" {
         }
     }
 
+    GLenum variantToFormat(value vFormat) {
+        switch(Int_val(vFormat)) {
+            case 0:
+                return GL_ALPHA;
+            case 1:
+                return GL_LUMINANCE;
+            case 2:
+                return GL_LUMINANCE_ALPHA;
+            case 3:
+                return GL_RGB;
+            case 4:
+                return GL_RGBA;
+            default:
+                warn("Unexpected format value!");
+                return 0;
+        }
+    }
+
     CAMLprim value
     caml_glClearColor(value vr, value vg, value vb, value va) {
         float r = Double_val(vr);
@@ -184,7 +212,7 @@ extern "C" {
 
     CAMLprim value
     caml_glScissor(value vX, value vY, value vWidth, value vHeight) {
-        int x = Int_val(vX);    
+        int x = Int_val(vX);
         int y = Int_val(vY);
         int width = Int_val(vWidth);
         int height = Int_val(vHeight);
@@ -256,6 +284,7 @@ extern "C" {
     caml_glDeleteShader(value vShader) {
         GLuint shader = (GLuint)vShader;
         glDeleteShader(shader);
+        return Val_unit;
     }
 
     CAMLprim value
@@ -303,16 +332,34 @@ extern "C" {
         s = String_val(vAttributeName);
         int val = glGetAttribLocation(shaderProgram, s);
         return (value)val;
+
+        // CAMLparam2(vProgram, vAttributeName);
+
+        // unsigned int shaderProgram = (unsigned int)vProgram;
+        // char *attributeName = String_val(vAttributeName);
+
+        // int attributeLocation = glGetAttribLocation(shaderProgram, attributeName);
+
+        // CAMLreturn(Val_int(attributeLocation));
     }
 
     CAMLprim value
-    caml_glGetUniformLocation(value vProgram, value vAttributeName) {
+    caml_glGetUniformLocation(value vProgram, value vUniformName) {
         unsigned int shaderProgram = (unsigned int)vProgram;
         char *s;
-        s = String_val(vAttributeName);
+        s = String_val(vUniformName);
 
         int val = glGetUniformLocation(shaderProgram, s);
         return (value)val;
+
+        // CAMLparam2(vProgram, vUniformName);
+
+        // unsigned int shaderProgram = (unsigned int)vProgram;
+        // char *uniformName = String_val(vUniformName);
+
+        // int uniformLocation = glGetUniformLocation(shaderProgram, uniformName);
+
+        // CAMLreturn(Val_int(uniformLocation));
     }
 
     CAMLprim value
@@ -449,58 +496,108 @@ extern "C" {
     }
 
     CAMLprim value
-    caml_glBindTexture(value vTextureType, value vTexture) {
+    caml_glBindTexture(value vTarget, value vTexture) {
         unsigned int texture = (unsigned int)vTexture;
-        glBindTexture(variantToTextureType(vTextureType), texture);
+        glBindTexture(variantToTarget(vTarget), texture);
         return Val_unit;
     }
 
     CAMLprim value
-    caml_glTexImage2D(value vTextureType, value vImage) {
+    caml_glTexImage2D(
+            value vTarget,
+            value vLevel,
+            value vInternalFormat,
+            value vFormat,
+            value vType,
+            value vImageData) {
+        CAMLparam5(vTarget, vLevel, vInternalFormat, vFormat, vType);
+        CAMLxparam1(vImageData);
 
-        ReglfwImageInfo *pImage = (ReglfwImageInfo *)vImage;
-
-        GLenum channels;
-        switch (pImage->numChannels) {
-            case 1:
-                channels = GL_ALPHA;
-                break;
-            case 2:
-                channels = GL_LUMINANCE_ALPHA;
-                break;
-            case 3:
-                channels = GL_RGB;
-                break;
-            case 4:
-            default:
-                channels = GL_RGBA;
-        }
+        GLsizei width = Caml_ba_array_val(vImageData)->dim[0];
+        GLsizei height = Caml_ba_array_val(vImageData)->dim[1];
+        GLvoid *pImageData = (GLvoid *)Caml_ba_data_val(vImageData);
 
         glTexImage2D(
-                variantToTextureType(vTextureType), 
+                variantToTarget(vTarget),
+                Int_val(vLevel),
+                variantToFormat(vInternalFormat),
+                width,
+                height,
                 0,
-                channels,
-                pImage->width,
-                pImage->height,
-                0,
-                channels,
-                GL_UNSIGNED_BYTE,  // TODO: Support for floating-point textures!
-                pImage->data);
-        return Val_unit;
+                variantToFormat(vFormat),
+                variantToType(vType),
+                pImageData);
+
+        CAMLreturn(Val_unit);
     }
 
     CAMLprim value
-    caml_glTexParameteri(value vTextureType, value vTextureParameter, value vTextureParameterValue) {
+    caml_glTexImage2D_extension(value *argv, int argn)
+    {
+        return caml_glTexImage2D(
+                argv[0],
+                argv[1],
+                argv[2],
+                argv[3],
+                argv[4],
+                argv[5]);
+    }
+
+    CAMLprim value
+    caml_glTexImage3D(
+            value vTarget,
+            value vLevel,
+            value vInternalFormat,
+            value vFormat,
+            value vType,
+            value vImageData) {
+        CAMLparam5(vTarget, vLevel, vInternalFormat, vFormat, vType);
+        CAMLxparam1(vImageData);
+
+        GLsizei width = Caml_ba_array_val(vImageData)->dim[0];
+        GLsizei height = Caml_ba_array_val(vImageData)->dim[1];
+        GLsizei depth = Caml_ba_array_val(vImageData)->dim[2];
+        GLvoid *pImageData = (GLvoid *)Caml_ba_array_val(vImageData);
+
+        glTexImage3D(
+                variantToTarget(vTarget),
+                Int_val(vLevel),
+                variantToFormat(vInternalFormat),
+                width,
+                height,
+                depth,
+                0,
+                variantToFormat(vFormat),
+                variantToType(vType),
+                pImageData);
+
+        CAMLreturn(Val_unit);
+    }
+
+    CAMLprim value
+    caml_glTexImage3D_extension(value *argv, int argn)
+    {
+        return caml_glTexImage3D(
+                argv[0],
+                argv[1],
+                argv[2],
+                argv[3],
+                argv[4],
+                argv[5]);
+    }
+
+    CAMLprim value
+    caml_glTexParameteri(value vTarget, value vTextureParameter, value vTextureParameterValue) {
         glTexParameteri(
-                variantToTextureType(vTextureType),
+                variantToTarget(vTarget),
                 variantToTextureParameter(vTextureParameter),
                 variantToTextureParameterValue(vTextureParameterValue));
         return Val_unit;
     }
 
     CAMLprim value
-    caml_glGenerateMipmap(value vTextureType) {
-        glGenerateMipmap(variantToTextureType(vTextureType));
+    caml_glGenerateMipmap(value vTarget) {
+        glGenerateMipmap(variantToTarget(vTarget));
         return Val_unit;
     }
 
@@ -561,24 +658,95 @@ extern "C" {
     }
 
     CAMLprim value
-    caml_glEnableVertexAttribArray(value vAttributeLocation) {
-        int attributeLocation = (int)(vAttributeLocation);
+    caml_glEnableVertexAttribArray(value vIndex) {
+        int attributeLocation = (int)(vIndex);
         glEnableVertexAttribArray(attributeLocation);
         return Val_unit;
+
+        // int index = Int_val(vIndex);
+
+        // glEnableVertexAttribArray(index);
+        // return Val_unit;
     }
 
     CAMLprim value
-    caml_glVertexAttribPointer(value vAttrib, value vNumComponents) {
-        // TODO: Params!
-        int attributeLocation = (int)(vAttrib);
-        int numComponents = Int_val(vNumComponents);
-        glVertexAttribPointer(attributeLocation, numComponents, GL_FLOAT, GL_FALSE, 0, (void*)0);
-        return Val_unit;
+    caml_glVertexAttribPointer(
+            value vIndex,
+            value vSize,
+            value vGlType,
+            value vNormalized,
+            value vStride,
+            value vOffset) {
+        // // TODO: Params!
+        // int attributeLocation = (int)(vIndex);
+        // int numComponents = Int_val(vSize);
+        // glVertexAttribPointer(attributeLocation, numComponents, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        // return Val_unit;
+
+        CAMLparam5(vIndex, vSize, vGlType, vNormalized, vStride);
+        CAMLxparam1(vOffset);
+
+        GLuint index = (int)vIndex;
+        GLint size = Int_val(vSize);
+        GLenum glType = variantToType(vGlType);
+        GLboolean normalized = Bool_val(vNormalized);
+        GLsizei stride = Int_val(vStride);
+        void* pointer = (void *) Int_val(vOffset);
+
+        glVertexAttribPointer(index, size, glType, normalized, stride, pointer);
+
+        CAMLreturn(Val_unit);
+    }
+
+    CAMLprim value
+    caml_glVertexAttribPointer_extension(value *argv, int argn)
+    {
+        return caml_glVertexAttribPointer(
+                argv[0],
+                argv[1],
+                argv[2],
+                argv[3],
+                argv[4],
+                argv[5]);
     }
 
     CAMLprim value
     caml_glUnbindBuffer(value unit) {
         printf("TODO: glUnbindBuffer\n");
+        return Val_unit;
+    }
+
+    CAMLprim value
+    caml_reglfwTexImage2D(value vTarget, value vImage) {
+
+        ReglfwImageInfo *pImage = (ReglfwImageInfo *)vImage;
+
+        GLenum format;
+        switch (pImage->numChannels) {
+            case 1:
+                format = GL_ALPHA;
+                break;
+            case 2:
+                format = GL_LUMINANCE_ALPHA;
+                break;
+            case 3:
+                format = GL_RGB;
+                break;
+            case 4:
+            default:
+                format = GL_RGBA;
+        }
+
+        glTexImage2D(
+                variantToTarget(vTarget),
+                0, // TODO: Support for specifying the level of detail
+                format,
+                pImage->width,
+                pImage->height,
+                0,
+                format,
+                GL_UNSIGNED_BYTE,  // TODO: Support for floating-point textures!
+                pImage->data);
         return Val_unit;
     }
 }
